@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import json
 import pika
 
 
@@ -30,3 +31,11 @@ def publish(body, queue, exchange="", routing_key=""):
 
     channel.basic_publish(exchange=exchange, routing_key=routing_key, body=body)
     connection.close()
+
+
+def serialize(message):
+    return json.dumps(message, default=str)
+
+
+def deserialize(message):
+    return json.loads(message)
