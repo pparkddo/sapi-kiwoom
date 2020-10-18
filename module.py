@@ -5,8 +5,8 @@ from typing import Any, Union, List
 
 from PyQt5.QAxContainer import QAxWidget
 
-from mq import publish, serialize, deserialize
-from utils import get_task_response, get_consume_thread
+from mq import publish, serialize, deserialize, TASK_SUCCEED, TASK_FAILED
+from utils import get_task_response, get_consume_thread, get_task_id
 
 
 def get_randomized_screen_number():
@@ -60,7 +60,8 @@ KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
     REQUEST_DAY_CANDLE: [
         KiwoomTransactionResultField("종목코드", "stock_code"),
         KiwoomTransactionResultField("현재가", "closing"),
-        KiwoomTransactionResultField("거래량", "tr_amount"),
+        KiwoomTransactionResultField("거래량", "volume"),
+        KiwoomTransactionResultField("거래대금", "tr_amount"),
         KiwoomTransactionResultField("일자", "day"),
         KiwoomTransactionResultField("시가", "opening"),
         KiwoomTransactionResultField("고가", "high"),
@@ -71,6 +72,7 @@ KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
         KiwoomTransactionResultField("소업종구분", "sub_sector"),
         KiwoomTransactionResultField("종목정보", "stock_info"),
         KiwoomTransactionResultField("수정주가이벤트", "revise_event"),
+        KiwoomTransactionResultField("전일종가", "previous_closing"),
     ],
 }
 
@@ -89,7 +91,13 @@ def get_transaction_parameters(transaction_code, parameters):
     return transaction_parameters
 
 
+def is_empty_transaction_data(transaction_data):
+    return transaction_data is None
+
+
 def get_transaction_response(transaction_code, transaction_data):
+    if is_empty_transaction_data(transaction_data):
+        return []
     fields = KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP[transaction_code]
     changed_fields = [each.changed_name for each in fields]
     return [dict(zip(changed_fields, row)) for row in transaction_data]
@@ -114,18 +122,31 @@ class KiwoomTask:
         self.transaction_responses = []
 
     @property
-    def is_completed(self):
-        return True
-        # if self.transaction_code == REQUEST_DAY_CANDLE:
-        #     return self.last_response[-1] >= self.parameters["from"]
-
-    @property
     def last_response(self):
         return self.transaction_responses[-1]
 
+    @property
+    def has_result(self):
+        return self.transaction_responses
 
-KIWOOM_SINGLE_REQUEST = 0
-KIWOOM_CONTINUE_REQUEST = 2
+    @property
+    def is_completed(self):
+        if self.transaction_code == REQUEST_DAY_CANDLE:
+            return self.last_response["day"] <= self.parameters["from"]
+
+    @property
+    def filtered_responses(self):
+        if self.transaction_code == REQUEST_DAY_CANDLE:
+            return list(
+                filter(
+                    lambda x: self.parameters["from"] <= x["day"] <= self.parameters["to"],
+                    self.transaction_responses
+                )
+            )
+
+
+KIWOOM_SINGLE_REQUEST = "0"
+KIWOOM_CONTINUE_REQUEST = "2"
 
 
 class KiwoomTransactionRequest:
@@ -138,6 +159,13 @@ class KiwoomTransactionRequest:
 
 
 REQUEST_SUCCEED = 0
+
+
+CONNECTION_SUCCEED = 0
+
+
+def is_last_transaction_data(has_next):
+    return has_next == KIWOOM_SINGLE_REQUEST
 
 
 class KiwoomModule(QAxWidget):
@@ -159,9 +187,6 @@ class KiwoomModule(QAxWidget):
     def callback(self, channel, method, properties, body):
         self.consume_task_request(deserialize(body))
 
-    def get_task(self, task_id):
-        return self.tasks[task_id]
-
     def consume_task_request(self, message):
         task_id = message["task_id"]
         if message["method"] == "realtime":
@@ -173,13 +198,32 @@ class KiwoomModule(QAxWidget):
                 message["method"],
                 message["parameters"]
             )
+            task.transaction_code = transaction_request.transaction_code
             task.transaction_request = transaction_request
             self.tasks.update({task_id: task})
             self.request(transaction_request)
 
+    def get_task(self, task_id):
+        return self.tasks[task_id]
+
     def on_connect(self, error_code):
-        publish(str(error_code), "sapi-kiwoom")
-        print(error_code)
+        if error_code == CONNECTION_SUCCEED:
+            task_id = get_task_id()
+            task_response = get_task_response(
+                task_id,
+                "Connection Success",
+                datetime.now(),
+                TASK_SUCCEED
+            )
+            publish(serialize(task_response), "sapi-kiwoom")
+        else:
+            task_response = get_task_response(
+                task_id,
+                "Connection Failed",
+                datetime.now(),
+                TASK_FAILED
+            )
+            publish(serialize(task_response), "sapi-kiwoom")
 
     def on_receive_message(self, screen_no, tr_id, tr_code, message):
         print(
@@ -187,21 +231,32 @@ class KiwoomModule(QAxWidget):
         )
 
     def on_receive_tr_data(
-        self, screen_no, task_id, transaction_code, record_name, has_next, *deprecated
-    ):
+            self,
+            screen_no,
+            task_id,
+            transaction_code,
+            record_name,
+            has_next,
+            *deprecated
+        ):
         transaction_data = self.get_transaction_data(transaction_code, task_id)
         transaction_response = get_transaction_response(transaction_code, transaction_data)
         current_task = self.get_task(task_id)
-        current_task.transaction_responses.append(transaction_response)
-        if current_task.is_completed:
+        current_task.transaction_responses.extend(transaction_response)
+        if (
+                not current_task.has_result
+                or current_task.is_completed
+                or is_last_transaction_data(has_next)
+            ):
             task_response = get_task_response(
                 task_id,
-                transaction_response,
+                current_task.filtered_responses,
                 datetime.now(),
-                "SUCCESS"
+                TASK_SUCCEED
             )
             publish(serialize(task_response), "sapi-kiwoom")
         else:
+            current_task.transaction_request.continuous = KIWOOM_CONTINUE_REQUEST
             self.request(current_task.transaction_request)
 
     def connect(self):

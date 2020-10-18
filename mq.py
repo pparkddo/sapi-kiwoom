@@ -5,6 +5,9 @@ import pika
 
 BROKER_URL = "amqp://localhost:5672"
 
+TASK_SUCCEED = "TASK_SUCCEED"
+TASK_FAILED = "TASK_FAILED"
+
 
 class MessageQueueConsumer(ABC):
 
