@@ -1,11 +1,4 @@
-from threading import Thread
 from uuid import uuid4
-
-from mq import consume
-
-
-def get_consume_thread(queue, callback):
-    return Thread(target=consume, args=(queue, callback))
 
 
 def get_task_id():

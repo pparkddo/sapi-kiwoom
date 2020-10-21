@@ -5,8 +5,9 @@ from typing import Any, Union, List
 
 from PyQt5.QAxContainer import QAxWidget
 
-from mq import publish, serialize, deserialize, TASK_SUCCEED, TASK_FAILED
-from utils import get_task_response, get_consume_thread, get_task_id
+from mq import publish, serialize, deserialize, TASK_SUCCEED, TASK_FAILED, get_consume_thread
+from utils import get_task_response, get_task_id
+from delay import wait_until_request_available
 
 
 def get_randomized_screen_number():
@@ -178,6 +179,7 @@ class KiwoomModule(QAxWidget):
     def __init__(self):
         super().__init__()
         self.tasks = {}
+        self.request_timestamps = []
         self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
         self.OnEventConnect.connect(self.on_connect)
         self.OnReceiveMsg.connect(self.on_receive_message)
@@ -185,6 +187,7 @@ class KiwoomModule(QAxWidget):
         self.consumer = get_consume_thread("tasks", self.callback)
 
     def callback(self, channel, method, properties, body):
+        # pylint: disable=unused-argument
         self.consume_task_request(deserialize(body))
 
     def consume_task_request(self, message):
@@ -205,6 +208,9 @@ class KiwoomModule(QAxWidget):
 
     def get_task(self, task_id):
         return self.tasks[task_id]
+
+    def append_request_timestamps(self, request_timestamp):
+        self.request_timestamps.append(request_timestamp)
 
     def on_connect(self, error_code):
         if error_code == CONNECTION_SUCCEED:
@@ -239,6 +245,7 @@ class KiwoomModule(QAxWidget):
             has_next,
             *deprecated
         ):
+        # pylint: disable=unused-argument
         transaction_data = self.get_transaction_data(transaction_code, task_id)
         transaction_response = get_transaction_response(transaction_code, transaction_data)
         current_task = self.get_task(task_id)
@@ -270,6 +277,8 @@ class KiwoomModule(QAxWidget):
             self.set_transaction_parameter(key, value)
 
     def request(self, transaction_request):
+        wait_until_request_available(self.request_timestamps)
+        self.append_request_timestamps(datetime.now())
         self.set_transaction_parameters(transaction_request.transaction_parameters)
         return_code = self.dynamicCall(
             "CommRqData(QString, QString, int, QString)",
@@ -283,6 +292,13 @@ class KiwoomModule(QAxWidget):
             current_task.status = REQUESTED
         else:
             current_task.status = FAILED
+            task_response = get_task_response(
+                transaction_request.transaction_id,
+                [],
+                datetime.now(),
+                TASK_FAILED
+            )
+            publish(serialize(task_response), "sapi-kiwoom")
 
     def get_transaction_data(self, transcation_code, task_id):
         return self.dynamicCall("GetCommDataEx(QString, QString)", transcation_code, task_id)

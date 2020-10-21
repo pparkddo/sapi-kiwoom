@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from threading import Thread
 import json
 import pika
 
@@ -34,6 +35,10 @@ def publish(body, queue, exchange="", routing_key=""):
 
     channel.basic_publish(exchange=exchange, routing_key=routing_key, body=body)
     connection.close()
+
+
+def get_consume_thread(queue, callback):
+    return Thread(target=consume, args=(queue, callback))
 
 
 def serialize(message):
