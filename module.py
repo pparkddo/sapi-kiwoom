@@ -196,11 +196,22 @@ class KiwoomModule(QAxWidget):
             pass
         else:
             task = KiwoomTask(message)
-            transaction_request = KiwoomTransactionRequest(
-                task_id,
-                message["method"],
-                message["parameters"]
-            )
+            try:
+                transaction_request = KiwoomTransactionRequest(
+                    task_id,
+                    message["method"],
+                    message["parameters"]
+                )
+            except ValueError as error:
+                error_message = str(error)
+                task_response = get_task_response(
+                    task_id,
+                    error_message,
+                    datetime.now(),
+                    TASK_FAILED
+                )
+                publish(serialize(task_response), "sapi-kiwoom")
+                return
             task.transaction_code = transaction_request.transaction_code
             task.transaction_request = transaction_request
             self.tasks.update({task_id: task})
