@@ -13,7 +13,46 @@ def get_randomized_screen_number():
     return f"{randrange(1, 200):>04d}"
 
 
-REQUEST_DAY_CANDLE = "OPT10081"
+# Method
+DAY_CANDLE = "day-candle"
+GET_STOCK_NAME = "get-stock-name"
+
+
+# Method type
+TRANSACTION = "TRANSACTION"
+REALTIME = "REALTIME"
+LOOKUP = "LOOKUP"
+
+
+METHOD_TYPE_MAP = {
+    DAY_CANDLE: TRANSACTION,
+    GET_STOCK_NAME: LOOKUP,
+}
+
+
+def get_method_type(method):
+    if method in METHOD_TYPE_MAP:
+        return METHOD_TYPE_MAP[method]
+    else:
+        raise KeyError(f"Key{method} is not exists in method map")
+
+
+@dataclass
+class KiwoomLookupParameter:
+    name: str
+    description: str
+
+
+KIWOOM_LOOKUP_PARAMETER_MAP = {
+    GET_STOCK_NAME: [
+        KiwoomLookupParameter("stock_code", "6자리 종목코드"),
+    ],
+}
+
+
+def get_lookup_parameters(method, parameters):
+    lookup_parameters = KIWOOM_LOOKUP_PARAMETER_MAP[method]
+    return [parameters[each.name] for each in lookup_parameters]
 
 
 @dataclass
@@ -29,8 +68,12 @@ class KiwoomTransactionResultField:
     changed_name: str
 
 
+# Transaction Code
+REQUEST_DAY_CANDLE = "OPT10081"
+
+
 KIWOOM_TRANSACTION_CODE_MAP = {
-    "day-candle": REQUEST_DAY_CANDLE,
+    DAY_CANDLE: REQUEST_DAY_CANDLE,
 }
 
 
@@ -102,6 +145,7 @@ def get_transaction_response(transaction_code, transaction_data):
     return [dict(zip(changed_fields, row)) for row in transaction_data]
 
 
+# Task Status
 PENDING = "PENDING"
 REQUESTED = "REQUESTED"
 COMPLETED = "COMPLETED"
@@ -144,6 +188,7 @@ class KiwoomTask:
             )
 
 
+# Kiwoom Request Continuous Status
 KIWOOM_SINGLE_REQUEST = "0"
 KIWOOM_CONTINUE_REQUEST = "2"
 
@@ -157,9 +202,11 @@ class KiwoomTransactionRequest:
         self.screen_no = get_randomized_screen_number()
 
 
+# Kiwoom Transaction Request Status
 REQUEST_SUCCEED = 0
 
 
+# Kiwoom Connection Status
 CONNECTION_SUCCEED = 0
 
 
@@ -190,15 +237,40 @@ class KiwoomModule(QAxWidget):
 
     def consume_task_request(self, message):
         task_id = message["task_id"]
-        if message["method"] == "realtime":
+        method = message["method"]
+        parameters = message["parameters"]
+
+        try:
+            method_type = get_method_type(method)
+        except KeyError as error:
+            error_message = str(error)
+            task_response = get_task_response(
+                task_id,
+                error_message,
+                datetime.now(),
+                TASK_FAILED
+            )
+            publish(serialize(task_response), "sapi-kiwoom")
+            return
+
+        if method_type == REALTIME:
             pass
+        elif method_type == LOOKUP:
+            lookup_result = self.get_lookup_result(method, parameters)
+            task_response = get_task_response(
+                task_id,
+                lookup_result,
+                datetime.now(),
+                TASK_SUCCEED
+            )
+            publish(serialize(task_response), "sapi-kiwoom")
         else:
             task = KiwoomTask(message)
             try:
                 transaction_request = KiwoomTransactionRequest(
                     task_id,
-                    message["method"],
-                    message["parameters"]
+                    method,
+                    parameters
                 )
             except ValueError as error:
                 error_message = str(error)
@@ -311,3 +383,11 @@ class KiwoomModule(QAxWidget):
 
     def get_transaction_data(self, transcation_code, task_id):
         return self.dynamicCall("GetCommDataEx(QString, QString)", transcation_code, task_id)
+
+    def get_lookup_result(self, method, parameters):
+        lookup_paramters = get_lookup_parameters(method, parameters)
+        if method == GET_STOCK_NAME:
+            return self.get_stock_name(lookup_paramters)
+
+    def get_stock_name(self, issue_code):
+        return self.dynamicCall("GetMasterCodeName(QString)", issue_code)

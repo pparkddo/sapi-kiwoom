@@ -42,7 +42,7 @@ def get_consume_thread(queue, callback):
 
 
 def serialize(message):
-    return json.dumps(message, default=str)
+    return json.dumps(message, ensure_ascii=False, default=str)
 
 
 def deserialize(message):
