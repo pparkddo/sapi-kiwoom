@@ -1,7 +1,6 @@
 from datetime import datetime
 from dataclasses import dataclass
 from random import randrange
-from typing import Any, Union, List
 
 from PyQt5.QAxContainer import QAxWidget
 
@@ -21,8 +20,7 @@ REQUEST_DAY_CANDLE = "OPT10081"
 class KiwoomTransactionParameter:
     origin_name: str
     changed_name: str
-    avaliable: Union[List[Any], str]
-    default: Any = None
+    description: str
 
 
 @dataclass
@@ -49,9 +47,8 @@ KIWOOM_TRANSACTION_PARAMETER_MAP = {
         KiwoomTransactionParameter("기준일자", "to", "조회할 마지막 날짜(YYYYMMDD)"),
         KiwoomTransactionParameter(
             "수정주가구분",
-            "is_revised",
-            "0 or 1, 수신데이터 1:유상증자, 2:무상증자, 4:배당락, 8:액면분할, 16:액면병합, 32:기업합병, 64:감자, 256:권리락",
-            "0"
+            "is_adjusted",
+            "0 or 1, 수신데이터 1:유상증자, 2:무상증자, 4:배당락, 8:액면분할, 16:액면병합, 32:기업합병, 64:감자, 256:권리락"
         ),
     ],
 }
@@ -84,10 +81,11 @@ def get_transaction_parameters(transaction_code, parameters):
     transaction_parameters = {}
 
     for each in kiwoom_transaction_parameters:
-        value = parameters.get(each.changed_name, each.default)
-
-        if not value:
+        if each.changed_name not in parameters:
             raise ValueError(f"{each.origin_name}({each.changed_name}) is essential")
+
+        value = parameters[each.changed_name]
+
         transaction_parameters.update({each.origin_name: value})
     return transaction_parameters
 
