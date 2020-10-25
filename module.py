@@ -14,7 +14,8 @@ def get_randomized_screen_number():
 
 
 # Method
-DAY_CANDLE = "day-candle"
+REQUEST_MINUTE_CANDLE = "request-minute-candle"
+REQUEST_DAY_CANDLE = "request-day-candle"
 GET_STOCK_NAME = "get-stock-name"
 
 
@@ -25,7 +26,8 @@ LOOKUP = "LOOKUP"
 
 
 METHOD_TYPE_MAP = {
-    DAY_CANDLE: TRANSACTION,
+    REQUEST_MINUTE_CANDLE: TRANSACTION,
+    REQUEST_DAY_CANDLE: TRANSACTION,
     GET_STOCK_NAME: LOOKUP,
 }
 
@@ -69,11 +71,13 @@ class KiwoomTransactionResultField:
 
 
 # Transaction Code
-REQUEST_DAY_CANDLE = "OPT10081"
+REQUEST_MINUTE_CANDLE_CODE = "OPT10080"
+REQUEST_DAY_CANDLE_CODE = "OPT10081"
 
 
 KIWOOM_TRANSACTION_CODE_MAP = {
-    DAY_CANDLE: REQUEST_DAY_CANDLE,
+    REQUEST_MINUTE_CANDLE: REQUEST_MINUTE_CANDLE_CODE,
+    REQUEST_DAY_CANDLE: REQUEST_DAY_CANDLE_CODE,
 }
 
 
@@ -85,7 +89,20 @@ def get_transaction_code(method):
 
 
 KIWOOM_TRANSACTION_PARAMETER_MAP = {
-    REQUEST_DAY_CANDLE: [
+    REQUEST_MINUTE_CANDLE_CODE: [
+        KiwoomTransactionParameter("종목코드", "stock_code", "6자리 종목코드"),
+        KiwoomTransactionParameter(
+            "틱범위",
+            "tick",
+            "1:1분, 3:3분, 5:5분, 10:10분, 15:15분, 30:30분, 45:45분, 60:60분"
+        ),
+        KiwoomTransactionParameter(
+            "수정주가구분",
+            "is_adjusted",
+            "0 or 1, 수신데이터 1:유상증자, 2:무상증자, 4:배당락, 8:액면분할, 16:액면병합, 32:기업합병, 64:감자, 256:권리락"
+        ),
+    ],
+    REQUEST_DAY_CANDLE_CODE: [
         KiwoomTransactionParameter("종목코드", "stock_code", "6자리 종목코드"),
         KiwoomTransactionParameter("기준일자", "to", "조회할 마지막 날짜(YYYYMMDD)"),
         KiwoomTransactionParameter(
@@ -98,7 +115,22 @@ KIWOOM_TRANSACTION_PARAMETER_MAP = {
 
 
 KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
-    REQUEST_DAY_CANDLE: [
+    REQUEST_MINUTE_CANDLE_CODE: [
+        KiwoomTransactionResultField("현재가", "closing"),
+        KiwoomTransactionResultField("거래량", "volume"),
+        KiwoomTransactionResultField("체결시간", "timestamp"),
+        KiwoomTransactionResultField("시가", "opening"),
+        KiwoomTransactionResultField("고가", "high"),
+        KiwoomTransactionResultField("저가", "low"),
+        KiwoomTransactionResultField("수정주가구분", "is_adjusted"),
+        KiwoomTransactionResultField("수정비율", "adjust_rate"),
+        KiwoomTransactionResultField("대업종구분", "main_sector"),
+        KiwoomTransactionResultField("소업종구분", "sub_sector"),
+        KiwoomTransactionResultField("종목정보", "stock_info"),
+        KiwoomTransactionResultField("수정주가이벤트", "adjust_event"),
+        KiwoomTransactionResultField("전일종가", "previous_closing"),
+    ],
+    REQUEST_DAY_CANDLE_CODE: [
         KiwoomTransactionResultField("종목코드", "stock_code"),
         KiwoomTransactionResultField("현재가", "closing"),
         KiwoomTransactionResultField("거래량", "volume"),
@@ -107,12 +139,12 @@ KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
         KiwoomTransactionResultField("시가", "opening"),
         KiwoomTransactionResultField("고가", "high"),
         KiwoomTransactionResultField("저가", "low"),
-        KiwoomTransactionResultField("수정주가구분", "is_revised"),
-        KiwoomTransactionResultField("수정비율", "revise_rate"),
+        KiwoomTransactionResultField("수정주가구분", "is_adjusted"),
+        KiwoomTransactionResultField("수정비율", "adjust_rate"),
         KiwoomTransactionResultField("대업종구분", "main_sector"),
         KiwoomTransactionResultField("소업종구분", "sub_sector"),
         KiwoomTransactionResultField("종목정보", "stock_info"),
-        KiwoomTransactionResultField("수정주가이벤트", "revise_event"),
+        KiwoomTransactionResultField("수정주가이벤트", "adjust_event"),
         KiwoomTransactionResultField("전일종가", "previous_closing"),
     ],
 }
@@ -145,6 +177,32 @@ def get_transaction_response(transaction_code, transaction_data):
     return [dict(zip(changed_fields, row)) for row in transaction_data]
 
 
+@dataclass
+class KiwoomTaskParameter:
+    name: str
+    description: str
+
+
+# Kiwoom Task Parameter
+KIWOOM_TASK_PARAMETER_MAP = {
+    REQUEST_MINUTE_CANDLE: [
+        KiwoomTaskParameter("from", "조회를 시작할 기간(YYYYMMDD)"),
+        KiwoomTaskParameter("to", "조회할 마지막 기간(YYYYMMDD)"),
+    ],
+    REQUEST_DAY_CANDLE: [
+        KiwoomTaskParameter("from", "조회를 시작할 기간(YYYYMMDD)"),
+    ],
+}
+
+
+def validate_task_parameters(method, parameters):
+    kiwoom_task_parameters = KIWOOM_TASK_PARAMETER_MAP[method]
+
+    for each in kiwoom_task_parameters:
+        if each.name not in parameters:
+            raise ValueError(f"Task parameter '{each.name}'({each.description}) is missed")
+
+
 # Task Status
 PENDING = "PENDING"
 REQUESTED = "REQUESTED"
@@ -174,16 +232,33 @@ class KiwoomTask:
 
     @property
     def is_completed(self):
-        if self.transaction_code == REQUEST_DAY_CANDLE:
-            return self.last_response["day"] <= self.parameters["from"]
+        transaction_code = self.transaction_code
+        parameters = self.parameters
+        last_response = self.last_response
+
+        if transaction_code == REQUEST_DAY_CANDLE_CODE:
+            return last_response["day"] <= parameters["from"]
+        elif transaction_code == REQUEST_MINUTE_CANDLE_CODE:
+            return last_response["timestamp"] <= parameters["from"]
 
     @property
     def filtered_responses(self):
-        if self.transaction_code == REQUEST_DAY_CANDLE:
+        transaction_code = self.transaction_code
+        parameters = self.parameters
+        transaction_responses = self.transaction_responses
+
+        if transaction_code == REQUEST_DAY_CANDLE_CODE:
             return list(
                 filter(
-                    lambda x: self.parameters["from"] <= x["day"] <= self.parameters["to"],
-                    self.transaction_responses
+                    lambda x: parameters["from"] <= x["day"] <= parameters["to"],
+                    transaction_responses
+                )
+            )
+        elif transaction_code == REQUEST_MINUTE_CANDLE_CODE:
+            return list(
+                filter(
+                    lambda x: parameters["from"] <= x["timestamp"] <= parameters["to"],
+                    transaction_responses
                 )
             )
 
@@ -265,7 +340,21 @@ class KiwoomModule(QAxWidget):
             )
             publish(serialize(task_response), "sapi-kiwoom")
         else:
+            try:
+                validate_task_parameters(method, parameters)
+            except ValueError as error:
+                error_message = str(error)
+                task_response = get_task_response(
+                    task_id,
+                    error_message,
+                    datetime.now(),
+                    TASK_FAILED
+                )
+                publish(serialize(task_response), "sapi-kiwoom")
+                return
+
             task = KiwoomTask(message)
+
             try:
                 transaction_request = KiwoomTransactionRequest(
                     task_id,
@@ -282,6 +371,7 @@ class KiwoomModule(QAxWidget):
                 )
                 publish(serialize(task_response), "sapi-kiwoom")
                 return
+
             task.transaction_code = transaction_request.transaction_code
             task.transaction_request = transaction_request
             self.tasks.update({task_id: task})
