@@ -306,6 +306,9 @@ class KiwoomModule(QAxWidget):
         self.OnReceiveTrData.connect(self.on_receive_tr_data)
         self.consumer = get_consume_thread("tasks", self.callback)
 
+    def start_consuming(self):
+        return self.consumer.start()
+
     def callback(self, channel, method, properties, body):
         # pylint: disable=unused-argument
         self.consume_task_request(deserialize(body))
@@ -393,6 +396,7 @@ class KiwoomModule(QAxWidget):
                 TASK_SUCCEED
             )
             publish(serialize(task_response), "sapi-kiwoom")
+            self.start_consuming()
         else:
             task_response = get_task_response(
                 task_id,

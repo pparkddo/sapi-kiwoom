@@ -10,6 +10,5 @@ if __name__ == "__main__":
 
     kiwoom_module = KiwoomModule()
     kiwoom_module.connect()
-    kiwoom_module.consumer.start()
 
     app.exec()
