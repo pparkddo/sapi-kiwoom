@@ -1,7 +1,9 @@
 # Method
+GET_STOCK_NAME = "get-stock-name"
+GET_STOCK_CODES = "get-stock-codes"
+GET_STOCK_STATES = "get-stock-states"
 REQUEST_MINUTE_CANDLE = "request-minute-candle"
 REQUEST_DAY_CANDLE = "request-day-candle"
-GET_STOCK_NAME = "get-stock-name"
 
 
 # Method type
@@ -11,9 +13,11 @@ LOOKUP = "LOOKUP"
 
 
 METHOD_TYPE_MAP = {
+    GET_STOCK_NAME: LOOKUP,
+    GET_STOCK_CODES: LOOKUP,
+    GET_STOCK_STATES: LOOKUP,
     REQUEST_MINUTE_CANDLE: TRANSACTION,
     REQUEST_DAY_CANDLE: TRANSACTION,
-    GET_STOCK_NAME: LOOKUP,
 }
 
 

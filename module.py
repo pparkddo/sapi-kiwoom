@@ -5,7 +5,14 @@ from PyQt5.QAxContainer import QAxWidget
 from mq import publish, serialize, deserialize, TASK_SUCCEED, TASK_FAILED, get_consume_thread
 from utils import get_task_response, get_task_id
 from delay import wait_until_request_available
-from kiwoom.method import get_method_type, REALTIME, LOOKUP, GET_STOCK_NAME
+from kiwoom.method import (
+    get_method_type,
+    REALTIME,
+    LOOKUP,
+    GET_STOCK_NAME,
+    GET_STOCK_CODES,
+    GET_STOCK_STATES,
+)
 from kiwoom.lookup import get_lookup_parameters
 from kiwoom.transaction import (
     KiwoomTransactionRequest,
@@ -86,7 +93,20 @@ class KiwoomModule(QAxWidget):
         if method_type == REALTIME:
             self.acknowledge_task(task_id)
         elif method_type == LOOKUP:
-            lookup_result = self.get_lookup_result(method, parameters)
+            try:
+                lookup_result = self.get_lookup_result(method, parameters)
+            except KeyError as error:
+                error_message = str(error)
+                task_response = get_task_response(
+                    task_id,
+                    error_message,
+                    datetime.now(),
+                    TASK_FAILED
+                )
+                publish(serialize(task_response), "sapi-kiwoom")
+                self.acknowledge_task(task_id)
+                return
+
             task_response = get_task_response(
                 task_id,
                 lookup_result,
@@ -236,6 +256,16 @@ class KiwoomModule(QAxWidget):
         lookup_paramters = get_lookup_parameters(method, parameters)
         if method == GET_STOCK_NAME:
             return self.get_stock_name(lookup_paramters)
+        elif method == GET_STOCK_CODES:
+            return self.get_stock_codes(lookup_paramters)
+        elif method == GET_STOCK_STATES:
+            return self.get_stock_states(lookup_paramters)
 
-    def get_stock_name(self, issue_code):
-        return self.dynamicCall("GetMasterCodeName(QString)", issue_code)
+    def get_stock_name(self, stock_code):
+        return self.dynamicCall("GetMasterCodeName(QString)", stock_code)
+
+    def get_stock_codes(self, market):
+        return self.dynamicCall("GetCodeListByMarket(QString)", market)
+
+    def get_stock_states(self, stock_code):
+        return self.dynamicCall("GetMasterStockState(QString)", stock_code)

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .method import GET_STOCK_NAME
+from .method import GET_STOCK_NAME, GET_STOCK_CODES, GET_STOCK_STATES
 
 
 @dataclass
@@ -11,6 +11,15 @@ class KiwoomLookupParameter:
 
 KIWOOM_LOOKUP_PARAMETER_MAP = {
     GET_STOCK_NAME: [
+        KiwoomLookupParameter("stock_code", "6자리 종목코드"),
+    ],
+    GET_STOCK_CODES: [
+        KiwoomLookupParameter(
+            "market",
+            "0:장내, 3:ELW, 4:뮤추얼펀드, 5:신주인수권, 6:리츠, 8:ETF, 9:하이일드펀드, 10:코스닥, 30:K-OTC, 50:코넥스(KONEX)"
+        ),
+    ],
+    GET_STOCK_STATES: [
         KiwoomLookupParameter("stock_code", "6자리 종목코드"),
     ],
 }
