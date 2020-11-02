@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 
-from .method import REQUEST_DAY_CANDLE, REQUEST_MINUTE_CANDLE
-from .transaction import REQUEST_DAY_CANDLE_CODE, REQUEST_MINUTE_CANDLE_CODE
+from .method import REQUEST_DAY_CANDLE, REQUEST_MINUTE_CANDLE, REQUEST_UPPER_AND_LOW
+from .transaction import (
+    REQUEST_DAY_CANDLE_CODE,
+    REQUEST_MINUTE_CANDLE_CODE,
+    REQUEST_UPPER_AND_LOW_CODE,
+)
 
 
 @dataclass
@@ -19,6 +23,7 @@ KIWOOM_TASK_PARAMETER_MAP = {
     REQUEST_DAY_CANDLE: [
         KiwoomTaskParameter("from", "조회를 시작할 기간(YYYYMMDD)"),
     ],
+    REQUEST_UPPER_AND_LOW: [],
 }
 
 
@@ -67,6 +72,8 @@ class KiwoomTask:
             return last_response["day"] <= parameters["from"]
         elif transaction_code == REQUEST_MINUTE_CANDLE_CODE:
             return last_response["timestamp"] <= parameters["from"]
+        elif transaction_code == REQUEST_UPPER_AND_LOW_CODE:
+            return True
 
     @property
     def filtered_responses(self):
@@ -88,3 +95,5 @@ class KiwoomTask:
                     transaction_responses
                 )
             )
+        elif transaction_code == REQUEST_UPPER_AND_LOW_CODE:
+            return transaction_responses

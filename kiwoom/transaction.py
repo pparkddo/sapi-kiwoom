@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from random import randrange
 
-from .method import REQUEST_DAY_CANDLE, REQUEST_MINUTE_CANDLE
+from .method import REQUEST_DAY_CANDLE, REQUEST_MINUTE_CANDLE, REQUEST_UPPER_AND_LOW
 
 
 # Kiwoom Request Continuous Status
@@ -29,11 +29,13 @@ class KiwoomTransactionResultField:
 # Transaction Code
 REQUEST_MINUTE_CANDLE_CODE = "OPT10080"
 REQUEST_DAY_CANDLE_CODE = "OPT10081"
+REQUEST_UPPER_AND_LOW_CODE = "OPT10017"
 
 
 KIWOOM_TRANSACTION_CODE_MAP = {
     REQUEST_MINUTE_CANDLE: REQUEST_MINUTE_CANDLE_CODE,
     REQUEST_DAY_CANDLE: REQUEST_DAY_CANDLE_CODE,
+    REQUEST_UPPER_AND_LOW: REQUEST_UPPER_AND_LOW_CODE,
 }
 
 
@@ -58,6 +60,41 @@ KIWOOM_TRANSACTION_PARAMETER_MAP = {
             "수정주가구분",
             "is_adjusted",
             "0 or 1, 수신데이터 1:유상증자, 2:무상증자, 4:배당락, 8:액면분할, 16:액면병합, 32:기업합병, 64:감자, 256:권리락"
+        ),
+    ],
+    REQUEST_UPPER_AND_LOW_CODE: [
+        KiwoomTransactionParameter("시장구분", "market", "000:전체, 001:코스피, 101:코스닥"),
+        KiwoomTransactionParameter(
+            "상하한구분",
+            "query_type",
+            "1:상한, 2:상승, 3:보합, 4: 하한, 5:하락, 6:전일상한, 7:전일하한"
+        ),
+        KiwoomTransactionParameter(
+            "정렬구분",
+            "sort_type",
+            "1:종목코드순, 2:연속횟수순(상위100개), 3:등락률순"
+        ),
+        KiwoomTransactionParameter(
+            "종목조건",
+            "filter_type",
+            "0:전체조회, 1:관리종목제외, 3:우선주제외, 4:우선주+관리종목제외, 5:증100제외, \
+                6:증100만 보기, 7:증40만 보기, 8:증30만 보기, 9:증20만 보기, 10:우선주+관리종목+환기종목제외"
+        ),
+        KiwoomTransactionParameter(
+            "거래량구분",
+            "volume_type",
+            "00000:전체조회, 00010:만주이상, 00050:5만주이상, 00100:10만주이상, 00150:15만주이상, \
+                00200:20만주이상, 00300:30만주이상, 00500:50만주이상, 01000:백만주이상"
+        ),
+        KiwoomTransactionParameter(
+            "신용조건",
+            "credit_type",
+            "0:전체조회, 1:신용융자A군, 2:신용융자B군, 3:신용융자C군, 4:신용융자D군, 9:신용융자전체"
+        ),
+        KiwoomTransactionParameter(
+            "매매금구분",
+            "price_type",
+            "0:전체조회, 1:1천원미만, 2:1천원~2천원, 3:2천원~3천원, 4:5천원~1만원, 5:1만원이상, 8:1천원이상"
         ),
     ],
 }
@@ -95,6 +132,22 @@ KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
         KiwoomTransactionResultField("종목정보", "stock_info"),
         KiwoomTransactionResultField("수정주가이벤트", "adjust_event"),
         KiwoomTransactionResultField("전일종가", "previous_closing"),
+    ],
+    REQUEST_UPPER_AND_LOW_CODE: [
+        KiwoomTransactionResultField("종목코드", "stock_code"),
+        KiwoomTransactionResultField("종목정보", "stock_info"),
+        KiwoomTransactionResultField("종목명", "stock_name"),
+        KiwoomTransactionResultField("현재가", "closing"),
+        KiwoomTransactionResultField("전일대비기호", "previous_contrast_symbol"),
+        KiwoomTransactionResultField("전일대비", "previous_contrast_price"),
+        KiwoomTransactionResultField("등락률", "fluctuation_rate"),
+        KiwoomTransactionResultField("거래량", "volume"),
+        KiwoomTransactionResultField("전일거래량", "previous_volume"),
+        KiwoomTransactionResultField("매도잔량", "remaining_sell_volume"),
+        KiwoomTransactionResultField("매도호가", "sell_offer_price"),
+        KiwoomTransactionResultField("매수호가", "buy_offer_price"),
+        KiwoomTransactionResultField("매수잔량", "remaining_buy_volume"),
+        KiwoomTransactionResultField("횟수", "continuous_count"),
     ],
 }
 
