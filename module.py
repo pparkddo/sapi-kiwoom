@@ -289,6 +289,10 @@ def is_last_transaction_data(has_next):
     return has_next == KIWOOM_SINGLE_REQUEST
 
 
+def get_message(body):
+    return deserialize(body)
+
+
 class KiwoomModule(QAxWidget):
 
     def __new__(cls):
@@ -298,20 +302,36 @@ class KiwoomModule(QAxWidget):
 
     def __init__(self):
         super().__init__()
+
         self.tasks = {}
+
+        self.consumer = get_consume_thread("tasks", self.callback)
+        self.delivery_tags = {}
+        self.channels = {}
+
         self.request_timestamps = []
+
         self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
+
         self.OnEventConnect.connect(self.on_connect)
         self.OnReceiveMsg.connect(self.on_receive_message)
         self.OnReceiveTrData.connect(self.on_receive_tr_data)
-        self.consumer = get_consume_thread("tasks", self.callback)
+
+    def acknowledge_task(self, task_id):
+        channel = self.channels[task_id]
+        delivery_tag = self.delivery_tags[task_id]
+        channel.basic_ack(delivery_tag=delivery_tag)
 
     def start_consuming(self):
         return self.consumer.start()
 
     def callback(self, channel, method, properties, body):
         # pylint: disable=unused-argument
-        self.consume_task_request(deserialize(body))
+        message = get_message(body)
+        task_id = message["task_id"]
+        self.delivery_tags.update({task_id: method.delivery_tag})
+        self.channels.update({task_id: channel})
+        self.consume_task_request(message)
 
     def consume_task_request(self, message):
         task_id = message["task_id"]
@@ -332,7 +352,7 @@ class KiwoomModule(QAxWidget):
             return
 
         if method_type == REALTIME:
-            pass
+            self.acknowledge_task(task_id)
         elif method_type == LOOKUP:
             lookup_result = self.get_lookup_result(method, parameters)
             task_response = get_task_response(
@@ -342,6 +362,7 @@ class KiwoomModule(QAxWidget):
                 TASK_SUCCEED
             )
             publish(serialize(task_response), "sapi-kiwoom")
+            self.acknowledge_task(task_id)
         else:
             try:
                 validate_task_parameters(method, parameters)
@@ -437,6 +458,7 @@ class KiwoomModule(QAxWidget):
                 TASK_SUCCEED
             )
             publish(serialize(task_response), "sapi-kiwoom")
+            self.acknowledge_task(task_id)
         else:
             current_task.transaction_request.continuous = KIWOOM_CONTINUE_REQUEST
             self.request(current_task.transaction_request)

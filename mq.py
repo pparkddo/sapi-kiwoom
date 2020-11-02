@@ -20,8 +20,9 @@ class MessageQueueConsumer(ABC):
 def consume(queue, callback):
     connection = pika.BlockingConnection(pika.URLParameters(BROKER_URL))
     channel = connection.channel()
+    channel.basic_qos(prefetch_count=1)
     channel.queue_declare(queue=queue)
-    channel.basic_consume(queue=queue, on_message_callback=callback, auto_ack=True)
+    channel.basic_consume(queue=queue, on_message_callback=callback, auto_ack=False)
     channel.start_consuming()
 
 
