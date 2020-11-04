@@ -114,32 +114,37 @@ def get_request_offer_price_info_result_fields():
     # pylint: disable=import-outside-toplevel
     from itertools import product
 
-    offer_types = {
-        "매수": "buy",
-        "매도": "sell"
-    }
-    line_numbers = list(range(1, 11))
     properties = {
         "잔량대비": "contrast_remaining",
-        "잔량": "price",
-        "호가": "remaining_volume"
+        "잔량": "remaining_volume",
+        "호가": "price"
     }
 
     fields = []
+    fields.append(KiwoomTransactionResultField("호가잔량기준시간", "timestamp"))
 
-    field_info = list(product(offer_types, line_numbers, properties))
-    for offer_type, line_number, property_ in field_info:
-        origin_name = f"{offer_type}{line_number}선{property_}"
-        changed_name = f"{offer_types[offer_type]}_{properties[property_]}_{line_number}"
+    for line_number, property_ in product(range(10, 1, -1), properties):
+        origin_name = f"매도{line_number}선{property_}"
+        changed_name = f"sell_{properties[property_]}_{line_number}"
         field = KiwoomTransactionResultField(origin_name, changed_name)
         fields.append(field)
 
-    extra_fields = [
-        KiwoomTransactionResultField("호가잔량기준시간", "timestamp"),
+    fields.extend([
+        KiwoomTransactionResultField("매도1차선잔량대비", "sell_remaining_volume_1"),
         KiwoomTransactionResultField("매도최우선잔량", "sell_top_priority_remaining_volume"),
         KiwoomTransactionResultField("매도최우선호가", "sell_top_priority_price"),
         KiwoomTransactionResultField("매수최우선호가", "buy_top_priority_price"),
         KiwoomTransactionResultField("매수최우선잔량", "buy_top_priority_remaining_volume"),
+        KiwoomTransactionResultField("매수1차선잔량대비", "buy_remaining_volume_1"),
+    ])
+
+    for line_number, property_ in product(range(2, 11), properties):
+        origin_name = f"매수{line_number}선{property_}"
+        changed_name = f"buy_{properties[property_]}_{line_number}"
+        field = KiwoomTransactionResultField(origin_name, changed_name)
+        fields.append(field)
+
+    fields.extend([
         KiwoomTransactionResultField("총매도잔량직전대비", "total_sell_remaining_volume_contrast_previous"),
         KiwoomTransactionResultField("총매도잔량", "total_sell_remaining_volume"),
         KiwoomTransactionResultField("총매수잔량", "total_buy_remaining_volume"),
@@ -151,9 +156,7 @@ def get_request_offer_price_info_result_fields():
         KiwoomTransactionResultField("시간외매도잔량", "offhour_sell_remaining_volume"),
         KiwoomTransactionResultField("시간외매수잔량", "offhour_buy_remaining_volume"),
         KiwoomTransactionResultField("시간외매수잔량대비", "offhour_buy_remaining_volume_contrast_previous"),
-    ]
-
-    fields.extend(extra_fields)
+    ])
 
     return fields
 
