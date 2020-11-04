@@ -1,7 +1,12 @@
 from dataclasses import dataclass
 from random import randrange
 
-from .method import REQUEST_DAY_CANDLE, REQUEST_MINUTE_CANDLE, REQUEST_UPPER_AND_LOW
+from .method import (
+    REQUEST_DAY_CANDLE,
+    REQUEST_MINUTE_CANDLE,
+    REQUEST_UPPER_AND_LOW,
+    REQUEST_OFFER_PRICE_INFO,
+)
 
 
 # Kiwoom Request Continuous Status
@@ -30,12 +35,14 @@ class KiwoomTransactionResultField:
 REQUEST_MINUTE_CANDLE_CODE = "OPT10080"
 REQUEST_DAY_CANDLE_CODE = "OPT10081"
 REQUEST_UPPER_AND_LOW_CODE = "OPT10017"
+REQUEST_OFFER_PRICE_INFO_CODE = "OPT10004"
 
 
 KIWOOM_TRANSACTION_CODE_MAP = {
     REQUEST_MINUTE_CANDLE: REQUEST_MINUTE_CANDLE_CODE,
     REQUEST_DAY_CANDLE: REQUEST_DAY_CANDLE_CODE,
     REQUEST_UPPER_AND_LOW: REQUEST_UPPER_AND_LOW_CODE,
+    REQUEST_OFFER_PRICE_INFO: REQUEST_OFFER_PRICE_INFO_CODE,
 }
 
 
@@ -97,7 +104,61 @@ KIWOOM_TRANSACTION_PARAMETER_MAP = {
             "0:전체조회, 1:1천원미만, 2:1천원~2천원, 3:2천원~3천원, 4:5천원~1만원, 5:1만원이상, 8:1천원이상"
         ),
     ],
+    REQUEST_OFFER_PRICE_INFO_CODE: [
+        KiwoomTransactionParameter("종목코드", "stock_code", "6자리 종목코드"),
+    ],
 }
+
+
+def get_request_offer_price_info_result_fields():
+    # pylint: disable=import-outside-toplevel
+    from itertools import product
+
+    offer_types = {
+        "매수": "buy",
+        "매도": "sell"
+    }
+    line_numbers = list(range(1, 11))
+    properties = {
+        "잔량대비": "contrast_remaining",
+        "잔량": "price",
+        "호가": "remaining_volume"
+    }
+
+    fields = []
+
+    field_info = list(product(offer_types, line_numbers, properties))
+    for offer_type, line_number, property_ in field_info:
+        origin_name = f"{offer_type}{line_number}선{property_}"
+        changed_name = f"{offer_types[offer_type]}_{properties[property_]}_{line_number}"
+        field = KiwoomTransactionResultField(origin_name, changed_name)
+        fields.append(field)
+
+    extra_fields = [
+        KiwoomTransactionResultField("호가잔량기준시간", "timestamp"),
+        KiwoomTransactionResultField("매도최우선잔량", "sell_top_priority_remaining_volume"),
+        KiwoomTransactionResultField("매도최우선호가", "sell_top_priority_price"),
+        KiwoomTransactionResultField("매수최우선호가", "buy_top_priority_price"),
+        KiwoomTransactionResultField("매수최우선잔량", "buy_top_priority_remaining_volume"),
+        KiwoomTransactionResultField("총매도잔량직전대비", "total_sell_remaining_volume_contrast_previous"),
+        KiwoomTransactionResultField("총매도잔량", "total_sell_remaining_volume"),
+        KiwoomTransactionResultField("총매수잔량", "total_buy_remaining_volume"),
+        KiwoomTransactionResultField("총매수잔량직전대비", "total_buy_remaining_volume_contrast_previous"),
+        KiwoomTransactionResultField(
+            "시간외매도잔량대비",
+            "offhour_sell_remaining_volume_contrast_previous"
+        ),
+        KiwoomTransactionResultField("시간외매도잔량", "offhour_sell_remaining_volume"),
+        KiwoomTransactionResultField("시간외매수잔량", "offhour_buy_remaining_volume"),
+        KiwoomTransactionResultField("시간외매수잔량대비", "offhour_buy_remaining_volume_contrast_previous"),
+    ]
+
+    fields.extend(extra_fields)
+
+    return fields
+
+
+REQUEST_OFFER_PRICE_INFO_RESULT_FIELDS = get_request_offer_price_info_result_fields()
 
 
 KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
@@ -149,6 +210,7 @@ KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
         KiwoomTransactionResultField("매수잔량", "remaining_buy_volume"),
         KiwoomTransactionResultField("횟수", "continuous_count"),
     ],
+    REQUEST_OFFER_PRICE_INFO_CODE: REQUEST_OFFER_PRICE_INFO_RESULT_FIELDS,
 }
 
 

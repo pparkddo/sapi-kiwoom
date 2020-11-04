@@ -5,6 +5,7 @@ GET_STOCK_STATES = "get-stock-states"
 REQUEST_MINUTE_CANDLE = "request-minute-candle"
 REQUEST_DAY_CANDLE = "request-day-candle"
 REQUEST_UPPER_AND_LOW = "request-upper-and-low"
+REQUEST_OFFER_PRICE_INFO = "request-offer-price-info"
 
 
 # Method type
@@ -20,6 +21,7 @@ METHOD_TYPE_MAP = {
     REQUEST_MINUTE_CANDLE: TRANSACTION,
     REQUEST_DAY_CANDLE: TRANSACTION,
     REQUEST_UPPER_AND_LOW: TRANSACTION,
+    REQUEST_OFFER_PRICE_INFO: TRANSACTION,
 }
 
 
@@ -27,4 +29,4 @@ def get_method_type(method):
     if method in METHOD_TYPE_MAP:
         return METHOD_TYPE_MAP[method]
     else:
-        raise KeyError(f"Key{method} is not exists in method map")
+        raise KeyError(f"Method '{method}' is not exists in method map")
