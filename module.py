@@ -88,6 +88,7 @@ class KiwoomModule(QAxWidget):
                 TASK_FAILED
             )
             publish(serialize(task_response), "sapi-kiwoom")
+            self.acknowledge_task(task_id)
             return
 
         if method_type == REALTIME:
