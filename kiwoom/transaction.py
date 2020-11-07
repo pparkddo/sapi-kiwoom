@@ -6,6 +6,7 @@ from .method import (
     REQUEST_MINUTE_CANDLE,
     REQUEST_UPPER_AND_LOW,
     REQUEST_OFFER_PRICE_INFO,
+    REQUEST_OFFHOUR_SINGLE_TRADE_INFO,
 )
 
 
@@ -36,6 +37,7 @@ REQUEST_MINUTE_CANDLE_CODE = "OPT10080"
 REQUEST_DAY_CANDLE_CODE = "OPT10081"
 REQUEST_UPPER_AND_LOW_CODE = "OPT10017"
 REQUEST_OFFER_PRICE_INFO_CODE = "OPT10004"
+REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE = "OPT10087"
 
 
 KIWOOM_TRANSACTION_CODE_MAP = {
@@ -43,6 +45,7 @@ KIWOOM_TRANSACTION_CODE_MAP = {
     REQUEST_DAY_CANDLE: REQUEST_DAY_CANDLE_CODE,
     REQUEST_UPPER_AND_LOW: REQUEST_UPPER_AND_LOW_CODE,
     REQUEST_OFFER_PRICE_INFO: REQUEST_OFFER_PRICE_INFO_CODE,
+    REQUEST_OFFHOUR_SINGLE_TRADE_INFO: REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE,
 }
 
 
@@ -107,6 +110,9 @@ KIWOOM_TRANSACTION_PARAMETER_MAP = {
     REQUEST_OFFER_PRICE_INFO_CODE: [
         KiwoomTransactionParameter("종목코드", "stock_code", "6자리 종목코드"),
     ],
+    REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE: [
+        KiwoomTransactionParameter("종목코드", "stock_code", "6자리 종목코드"),
+    ],
 }
 
 
@@ -161,7 +167,64 @@ def get_request_offer_price_info_result_fields():
     return fields
 
 
+def get_request_offhour_single_trade_info_result_fields():
+    # pylint: disable=import-outside-toplevel
+    from itertools import product
+
+    properties = {
+        "호가직전대비": "price_contrast_previous",
+        "호가수량": "volume",
+        "호가": "price"
+    }
+
+    fields = []
+    fields.append(KiwoomTransactionResultField("호가잔량기준시간", "timestamp"))
+
+    for property_, line_number in product(properties, range(5, 0, -1)):
+        origin_name = f"시간외단일가_매도{property_}{line_number}"
+        changed_name = f"offhour_sell_{properties[property_]}_{line_number}"
+        field = KiwoomTransactionResultField(origin_name, changed_name)
+        fields.append(field)
+
+    for property_, line_number in product(properties, range(1, 6)):
+        origin_name = f"시간외단일가_매수{property_}{line_number}"
+        changed_name = f"offhour_buy_{properties[property_]}_{line_number}"
+        field = KiwoomTransactionResultField(origin_name, changed_name)
+        fields.append(field)
+
+    fields.extend([
+        KiwoomTransactionResultField("시간외단일가_매도호가총잔량", "offhour_total_sell_remaining_volume"),
+        KiwoomTransactionResultField("시간외단일가_매수호가총잔량", "offhour_total_buy_remaining_volume"),
+        KiwoomTransactionResultField(
+            "매도호가총잔량직전대비",
+            "total_sell_remaining_volume_contrast_previous"
+        ),
+        KiwoomTransactionResultField("매도호가총잔량", "total_sell_remaining_volume"),
+        KiwoomTransactionResultField("매수호가총잔량", "total_buy_remaining_volume"),
+        KiwoomTransactionResultField("매수호가총잔량직전대비", "total_buy_remaining_volume_contrast_previous"),
+        KiwoomTransactionResultField(
+            "시간외매도호가총잔량직전대비",
+            "offhour_top_total_sell_remaining_volume_constart_previous"
+        ),
+        KiwoomTransactionResultField("시간외매도호가총잔량", "offhour_top_total_sell_remaining_volume"),
+        KiwoomTransactionResultField(
+            "시간외매수호가총잔량",
+            "offhour_top_total_buy_remaining_volume_constart_previous"
+        ),
+        KiwoomTransactionResultField("시간외매수호가총잔량직전대비", "offhour_top_total_buy_remaining_volume"),
+        KiwoomTransactionResultField("시간외단일가_현재가", "offhour_closing"),
+        KiwoomTransactionResultField("시간외단일가_전일대비기호", "offhour_closing"),
+        KiwoomTransactionResultField("시간외단일가_전일대비", "offhour_contrast_previous_market_day"),
+        KiwoomTransactionResultField("시간외단일가_등락률", "offhour_fluctuation_rate"),
+        KiwoomTransactionResultField("시간외단일가_누적거래량", "offhour_cumulative_volume"),
+    ])
+
+    return fields
+
+
 REQUEST_OFFER_PRICE_INFO_RESULT_FIELDS = get_request_offer_price_info_result_fields()
+# pylint: disable=line-too-long
+REQUEST_OFFHOUR_SINGLE_TRADE_INFO_RESULT_FIELDS = get_request_offhour_single_trade_info_result_fields()
 
 
 KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
@@ -214,6 +277,7 @@ KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
         KiwoomTransactionResultField("횟수", "continuous_count"),
     ],
     REQUEST_OFFER_PRICE_INFO_CODE: REQUEST_OFFER_PRICE_INFO_RESULT_FIELDS,
+    REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE: REQUEST_OFFHOUR_SINGLE_TRADE_INFO_RESULT_FIELDS,
 }
 
 

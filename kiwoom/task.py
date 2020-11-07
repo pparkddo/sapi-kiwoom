@@ -5,12 +5,14 @@ from .method import (
     REQUEST_MINUTE_CANDLE,
     REQUEST_UPPER_AND_LOW,
     REQUEST_OFFER_PRICE_INFO,
+    REQUEST_OFFHOUR_SINGLE_TRADE_INFO,
 )
 from .transaction import (
     REQUEST_DAY_CANDLE_CODE,
     REQUEST_MINUTE_CANDLE_CODE,
     REQUEST_UPPER_AND_LOW_CODE,
     REQUEST_OFFER_PRICE_INFO_CODE,
+    REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE,
 )
 
 
@@ -31,6 +33,7 @@ KIWOOM_TASK_PARAMETER_MAP = {
     ],
     REQUEST_UPPER_AND_LOW: [],
     REQUEST_OFFER_PRICE_INFO: [],
+    REQUEST_OFFHOUR_SINGLE_TRADE_INFO: [],
 }
 
 
@@ -83,6 +86,8 @@ class KiwoomTask:
             return True
         elif transaction_code == REQUEST_OFFER_PRICE_INFO_CODE:
             return True
+        elif transaction_code == REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE:
+            return True
 
     @property
     def filtered_responses(self):
@@ -107,4 +112,6 @@ class KiwoomTask:
         elif transaction_code == REQUEST_UPPER_AND_LOW_CODE:
             return transaction_responses
         elif transaction_code == REQUEST_OFFER_PRICE_INFO_CODE:
+            return transaction_responses
+        elif transaction_code == REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE:
             return transaction_responses

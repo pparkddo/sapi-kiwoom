@@ -6,6 +6,7 @@ REQUEST_MINUTE_CANDLE = "request-minute-candle"
 REQUEST_DAY_CANDLE = "request-day-candle"
 REQUEST_UPPER_AND_LOW = "request-upper-and-low"
 REQUEST_OFFER_PRICE_INFO = "request-offer-price-info"
+REQUEST_OFFHOUR_SINGLE_TRADE_INFO = "request-offhour-single-trade-info"
 
 
 # Method type
@@ -22,6 +23,7 @@ METHOD_TYPE_MAP = {
     REQUEST_DAY_CANDLE: TRANSACTION,
     REQUEST_UPPER_AND_LOW: TRANSACTION,
     REQUEST_OFFER_PRICE_INFO: TRANSACTION,
+    REQUEST_OFFHOUR_SINGLE_TRADE_INFO: TRANSACTION,
 }
 
 
