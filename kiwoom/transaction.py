@@ -7,6 +7,7 @@ from .method import (
     REQUEST_UPPER_AND_LOW,
     REQUEST_OFFER_PRICE_INFO,
     REQUEST_OFFHOUR_SINGLE_TRADE_INFO,
+    REQUEST_SHORT_TREND,
 )
 
 
@@ -38,6 +39,7 @@ REQUEST_DAY_CANDLE_CODE = "OPT10081"
 REQUEST_UPPER_AND_LOW_CODE = "OPT10017"
 REQUEST_OFFER_PRICE_INFO_CODE = "OPT10004"
 REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE = "OPT10087"
+REQUEST_SHORT_TREND_CODE = "OPT10014"
 
 
 KIWOOM_TRANSACTION_CODE_MAP = {
@@ -46,6 +48,7 @@ KIWOOM_TRANSACTION_CODE_MAP = {
     REQUEST_UPPER_AND_LOW: REQUEST_UPPER_AND_LOW_CODE,
     REQUEST_OFFER_PRICE_INFO: REQUEST_OFFER_PRICE_INFO_CODE,
     REQUEST_OFFHOUR_SINGLE_TRADE_INFO: REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE,
+    REQUEST_SHORT_TREND: REQUEST_SHORT_TREND_CODE,
 }
 
 
@@ -112,6 +115,12 @@ KIWOOM_TRANSACTION_PARAMETER_MAP = {
     ],
     REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE: [
         KiwoomTransactionParameter("종목코드", "stock_code", "6자리 종목코드"),
+    ],
+    REQUEST_SHORT_TREND_CODE: [
+        KiwoomTransactionParameter("종목코드", "stock_code", "6자리 종목코드"),
+        KiwoomTransactionParameter("시간구분", "query_type", "0:시작일, 1:기간"),
+        KiwoomTransactionParameter("시작일자", "start", "연도4자리, 월 2자리, 일 2자리 형식(YYYYMMDD)"),
+        KiwoomTransactionParameter("종료일자", "end", "연도4자리, 월 2자리, 일 2자리 형식(YYYYMMDD)"),
     ],
 }
 
@@ -278,6 +287,18 @@ KIWOOM_TRANSACTION_RESPONSE_FIELD_MAP = {
     ],
     REQUEST_OFFER_PRICE_INFO_CODE: REQUEST_OFFER_PRICE_INFO_RESULT_FIELDS,
     REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE: REQUEST_OFFHOUR_SINGLE_TRADE_INFO_RESULT_FIELDS,
+    REQUEST_SHORT_TREND_CODE: [
+        KiwoomTransactionResultField("일자", "day"),
+        KiwoomTransactionResultField("종가", "closing"),
+        KiwoomTransactionResultField("전일대비기호", "previous_contrast_symbol"),
+        KiwoomTransactionResultField("전일대비", "previous_contrast_price"),
+        KiwoomTransactionResultField("등락율", "fluctuation_rate"),
+        KiwoomTransactionResultField("거래량", "volume"),
+        KiwoomTransactionResultField("공매도량", "short_volume"),
+        KiwoomTransactionResultField("매매비중", "short_weight"),
+        KiwoomTransactionResultField("공매도거래대금", "short_trade_amount"),
+        KiwoomTransactionResultField("공매도평균가", "short_average_price"),
+    ],
 }
 
 
