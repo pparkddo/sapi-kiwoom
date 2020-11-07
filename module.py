@@ -163,8 +163,8 @@ class KiwoomModule(QAxWidget):
         self.request_timestamps.append(request_timestamp)
 
     def on_connect(self, error_code):
+        task_id = get_task_id()
         if error_code == CONNECTION_SUCCEED:
-            task_id = get_task_id()
             task_response = get_task_response(
                 task_id,
                 "Connection Success",
