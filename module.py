@@ -72,7 +72,7 @@ class KiwoomModule(QAxWidget):
 
     def publish_to_reply_queue(self, task_response):
         task_id = task_response["task_id"]
-        publish(serialize(task_response), self.get_reply_queue(task_id))
+        publish(serialize(task_response), self.get_reply_queue(task_id), channel=self.channel)
 
     def publish_and_ack(self, task_response):
         task_id = task_response["task_id"]
