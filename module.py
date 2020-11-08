@@ -121,7 +121,7 @@ class KiwoomModule(QAxWidget):
         elif method_type == LOOKUP:
             try:
                 lookup_result = self.get_lookup_result(method, parameters)
-            except KeyError as error:
+            except (KeyError, TypeError) as error:
                 error_message = str(error)
                 task_response = get_task_response(
                     task_id,
