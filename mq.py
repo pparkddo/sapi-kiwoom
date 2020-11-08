@@ -26,16 +26,34 @@ def consume(queue, callback):
     channel.start_consuming()
 
 
-def publish(body, queue, exchange="", routing_key=""):
-    connection = pika.BlockingConnection(pika.URLParameters(BROKER_URL))
-    channel = connection.channel()
+def publish(
+        body,
+        queue,
+        properties=None,
+        exchange="",
+        routing_key="",
+        channel=None,
+        is_queue_exist=True
+    ):
 
-    channel.queue_declare(queue=queue)
+    if not channel:
+        connection = pika.BlockingConnection(pika.URLParameters(BROKER_URL))
+        channel = connection.channel()
+
+    if not is_queue_exist:
+        channel.queue_declare(queue=queue)
 
     routing_key = routing_key if routing_key != "" else queue
 
-    channel.basic_publish(exchange=exchange, routing_key=routing_key, body=body)
-    connection.close()
+    channel.basic_publish(
+        exchange=exchange,
+        routing_key=routing_key,
+        body=body,
+        properties=properties
+    )
+
+    if not channel:
+        connection.close()
 
 
 def get_consume_thread(queue, callback):

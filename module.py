@@ -32,6 +32,12 @@ def get_message(body):
     return deserialize(body)
 
 
+def get_default_queue_dict(default):
+    # pylint: disable=import-outside-toplevel
+    from collections import defaultdict
+    return defaultdict(lambda: default)
+
+
 class KiwoomModule(QAxWidget):
 
     def __new__(cls):
@@ -46,7 +52,8 @@ class KiwoomModule(QAxWidget):
 
         self.consumer = get_consume_thread("tasks", self.callback)
         self.delivery_tags = {}
-        self.channels = {}
+        self.reply_queues = get_default_queue_dict("sapi-kiwoom")
+        self.channel = None
 
         self.request_timestamps = []
 
@@ -57,9 +64,20 @@ class KiwoomModule(QAxWidget):
         self.OnReceiveTrData.connect(self.on_receive_tr_data)
 
     def acknowledge_task(self, task_id):
-        channel = self.channels[task_id]
-        delivery_tag = self.delivery_tags[task_id]
-        channel.basic_ack(delivery_tag=delivery_tag)
+        delivery_tag = self.delivery_tags.pop(task_id)
+        self.channel.basic_ack(delivery_tag=delivery_tag)
+
+    def get_reply_queue(self, task_id):
+        return self.reply_queues[task_id]
+
+    def publish_to_reply_queue(self, task_response):
+        task_id = task_response["task_id"]
+        publish(serialize(task_response), self.get_reply_queue(task_id))
+
+    def publish_and_ack(self, task_response):
+        task_id = task_response["task_id"]
+        self.publish_to_reply_queue(task_response)
+        self.acknowledge_task(task_id)
 
     def start_consuming(self):
         return self.consumer.start()
@@ -68,11 +86,19 @@ class KiwoomModule(QAxWidget):
         # pylint: disable=unused-argument
         message = get_message(body)
         task_id = message["task_id"]
-        self.delivery_tags.update({task_id: method.delivery_tag})
-        self.channels.update({task_id: channel})
-        self.consume_task_request(message)
 
-    def consume_task_request(self, message):
+        self.delivery_tags.update({task_id: method.delivery_tag})
+
+        reply_queue = properties.reply_to
+        if reply_queue:
+            self.reply_queues.update({task_id: reply_queue})
+
+        if not self.channel:
+            self.channel = channel
+
+        self.handle_task_request(message)
+
+    def handle_task_request(self, message):
         task_id = message["task_id"]
         method = message["method"]
         parameters = message["parameters"]
@@ -87,8 +113,7 @@ class KiwoomModule(QAxWidget):
                 datetime.now(),
                 TASK_FAILED
             )
-            publish(serialize(task_response), "sapi-kiwoom")
-            self.acknowledge_task(task_id)
+            self.publish_and_ack(task_response)
             return
 
         if method_type == REALTIME:
@@ -104,8 +129,7 @@ class KiwoomModule(QAxWidget):
                     datetime.now(),
                     TASK_FAILED
                 )
-                publish(serialize(task_response), "sapi-kiwoom")
-                self.acknowledge_task(task_id)
+                self.publish_and_ack(task_response)
                 return
 
             task_response = get_task_response(
@@ -114,8 +138,7 @@ class KiwoomModule(QAxWidget):
                 datetime.now(),
                 TASK_SUCCEED
             )
-            publish(serialize(task_response), "sapi-kiwoom")
-            self.acknowledge_task(task_id)
+            self.publish_and_ack(task_response)
         else:
             try:
                 validate_task_parameters(method, parameters)
@@ -127,8 +150,7 @@ class KiwoomModule(QAxWidget):
                     datetime.now(),
                     TASK_FAILED
                 )
-                publish(serialize(task_response), "sapi-kiwoom")
-                self.acknowledge_task(task_id)
+                self.publish_and_ack(task_response)
                 return
 
             task = KiwoomTask(message)
@@ -147,8 +169,7 @@ class KiwoomModule(QAxWidget):
                     datetime.now(),
                     TASK_FAILED
                 )
-                publish(serialize(task_response), "sapi-kiwoom")
-                self.acknowledge_task(task_id)
+                self.publish_and_ack(task_response)
                 return
 
             task.transaction_code = transaction_request.transaction_code
@@ -171,7 +192,7 @@ class KiwoomModule(QAxWidget):
                 datetime.now(),
                 TASK_SUCCEED
             )
-            publish(serialize(task_response), "sapi-kiwoom")
+            self.publish_to_reply_queue(task_response)
             self.start_consuming()
         else:
             task_response = get_task_response(
@@ -180,7 +201,7 @@ class KiwoomModule(QAxWidget):
                 datetime.now(),
                 TASK_FAILED
             )
-            publish(serialize(task_response), "sapi-kiwoom")
+            self.publish_to_reply_queue(task_response)
 
     def on_receive_message(self, screen_no, tr_id, tr_code, message):
         print(
@@ -212,8 +233,7 @@ class KiwoomModule(QAxWidget):
                 datetime.now(),
                 TASK_SUCCEED
             )
-            publish(serialize(task_response), "sapi-kiwoom")
-            self.acknowledge_task(task_id)
+            self.publish_and_ack(task_response)
         else:
             current_task.transaction_request.continuous = KIWOOM_CONTINUE_REQUEST
             self.request(current_task.transaction_request)
@@ -250,7 +270,7 @@ class KiwoomModule(QAxWidget):
                 datetime.now(),
                 TASK_FAILED
             )
-            publish(serialize(task_response), "sapi-kiwoom")
+            self.publish_and_ack(task_response)
 
     def get_transaction_data(self, transcation_code, task_id):
         return self.dynamicCall("GetCommDataEx(QString, QString)", transcation_code, task_id)
