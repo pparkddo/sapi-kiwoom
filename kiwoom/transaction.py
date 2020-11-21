@@ -347,7 +347,7 @@ class KiwoomTransactionRequest:
         self.transaction_code = get_transaction_code(method)
         self.transaction_parameters = get_transaction_parameters(self.transaction_code, parameters)
         self.continuous = KIWOOM_SINGLE_REQUEST
-        self.screen_no = get_randomized_screen_number()
+        self.screen_number = get_randomized_screen_number()
 
 
 def is_last_transaction_data(has_next):

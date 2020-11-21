@@ -1,4 +1,6 @@
 # Method
+SUBSCRIBE_REALTIME = "subscribe-realtime"
+UNSUBSCRIBE_REALTIME = "unsubscribe-realtime"
 GET_STOCK_NAME = "get-stock-name"
 GET_STOCK_CODES = "get-stock-codes"
 GET_STOCK_STATES = "get-stock-states"
@@ -17,6 +19,8 @@ LOOKUP = "LOOKUP"
 
 
 METHOD_TYPE_MAP = {
+    SUBSCRIBE_REALTIME: REALTIME,
+    UNSUBSCRIBE_REALTIME: REALTIME,
     GET_STOCK_NAME: LOOKUP,
     GET_STOCK_CODES: LOOKUP,
     GET_STOCK_STATES: LOOKUP,
