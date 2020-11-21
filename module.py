@@ -169,8 +169,6 @@ class KiwoomModule(QAxWidget):
 
             stock_code = parameters["stock_code"]
 
-            print(self.listeners)
-            print(self.screen_numbers)
             if is_subscribe(method):
                 if not self.has_subscribed(stock_code, task_id):
                     screen_number = get_randomized_screen_number()
@@ -302,7 +300,10 @@ class KiwoomModule(QAxWidget):
 
     def on_receive_message(self, screen_number, tr_id, tr_code, message):
         print(
-            f"screen_number: {screen_number}, tr_id: {tr_id}, tr_code: {tr_code}, message: {message}"
+            f"screen_number: {screen_number}, \
+              tr_id: {tr_id}, \
+              tr_code: {tr_code}, \
+              message: {message}"
         )
 
     def on_receive_tr_data(
