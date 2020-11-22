@@ -153,7 +153,7 @@ def get_request_offer_price_info_result_fields():
         KiwoomTransactionResultField("매수1차선잔량대비", "buy_remaining_volume_1"),
     ])
 
-    for line_number, property_ in product(range(2, 11), properties):
+    for line_number, property_ in product(range(2, 11), reversed(properties.keys())):
         origin_name = f"매수{line_number}선{property_}"
         changed_name = f"buy_{properties[property_]}_{line_number}"
         field = KiwoomTransactionResultField(origin_name, changed_name)
@@ -195,7 +195,7 @@ def get_request_offhour_single_trade_info_result_fields():
         field = KiwoomTransactionResultField(origin_name, changed_name)
         fields.append(field)
 
-    for property_, line_number in product(properties, range(1, 6)):
+    for property_, line_number in product(reversed(properties.keys()), range(1, 6)):
         origin_name = f"시간외단일가_매수{property_}{line_number}"
         changed_name = f"offhour_buy_{properties[property_]}_{line_number}"
         field = KiwoomTransactionResultField(origin_name, changed_name)
