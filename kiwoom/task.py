@@ -121,4 +121,9 @@ class KiwoomTask:
         elif transaction_code == REQUEST_OFFHOUR_SINGLE_TRADE_INFO_CODE:
             return transaction_responses
         elif transaction_code == REQUEST_SHORT_TREND_CODE:
-            return transaction_responses
+            return list(
+                filter(
+                    lambda x: parameters["from"] <= x["day"] <= parameters["to"],
+                    transaction_responses
+                )
+            )

@@ -119,8 +119,8 @@ KIWOOM_TRANSACTION_PARAMETER_MAP = {
     REQUEST_SHORT_TREND_CODE: [
         KiwoomTransactionParameter("종목코드", "stock_code", "6자리 종목코드"),
         KiwoomTransactionParameter("시간구분", "query_type", "0:시작일, 1:기간"),
-        KiwoomTransactionParameter("시작일자", "start", "연도4자리, 월 2자리, 일 2자리 형식(YYYYMMDD)"),
-        KiwoomTransactionParameter("종료일자", "end", "연도4자리, 월 2자리, 일 2자리 형식(YYYYMMDD)"),
+        KiwoomTransactionParameter("시작일자", "from", "연도4자리, 월 2자리, 일 2자리 형식(YYYYMMDD)"),
+        KiwoomTransactionParameter("종료일자", "to", "연도4자리, 월 2자리, 일 2자리 형식(YYYYMMDD)"),
     ],
 }
 
