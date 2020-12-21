@@ -105,6 +105,9 @@ class Messenger:
     def _get_default_reply_queue(self):
         return "sapi-kiwoom"
 
+    def _get_reply_queue(self, task_id):
+        return self.reply_queues.get(task_id)
+
     def _pop_reply_queue(self, task_id):
         return self.reply_queues.pop(task_id)
 
@@ -113,9 +116,9 @@ class Messenger:
 
     def _publish_response(self, task_response):
         task_id = task_response["task_id"]
-        self.publish(task_response, self._pop_reply_queue(task_id), channel=self.channel)
+        self.publish(task_response, self._get_reply_queue(task_id), channel=self.channel)
 
     def _send(self, task_response):
         task_id = task_response["task_id"]
-        self._publish_response(task_response)
+        self.publish(task_response, self._pop_reply_queue(task_id), channel=self.channel)
         self.acknowledge_task(task_id)

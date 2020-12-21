@@ -120,10 +120,11 @@ class KiwoomModule(QAxWidget):
                     self.subscribe_real_time_data(screen_number, stock_code, "10", "0")
                     self.add_listener(stock_code, task_id)
                     self.add_screen_number(stock_code, screen_number)
-                self.messenger.send_success_message(
+                self.messenger.publish_success_message(
                     task_id,
                     f"{task_id} subscribes {stock_code} successfully"
                 )
+                self.messenger.acknowledge_task(task_id)
             elif is_unsubscribe(method):
                 if not self.has_subscribed(stock_code, task_id):
                     self.messenger.send_fail_message(
@@ -214,7 +215,7 @@ class KiwoomModule(QAxWidget):
             return
 
         for listener in listeners:
-            self.messenger.send_success_message(listener, real_time_data)
+            self.messenger.publish_success_message(listener, real_time_data)
 
     def connect(self):
         self.dynamicCall("CommConnect()")
