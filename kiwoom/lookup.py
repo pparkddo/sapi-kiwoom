@@ -3,6 +3,10 @@ from dataclasses import dataclass
 from .method import GET_STOCK_NAME, GET_STOCK_CODES, GET_STOCK_STATES
 
 
+class KiwoomLookupError(Exception):
+    pass
+
+
 @dataclass
 class KiwoomLookupParameter:
     name: str
@@ -26,5 +30,8 @@ KIWOOM_LOOKUP_PARAMETER_MAP = {
 
 
 def get_lookup_parameters(method, parameters):
-    lookup_parameters = KIWOOM_LOOKUP_PARAMETER_MAP[method]
-    return [parameters[each.name] for each in lookup_parameters]
+    try:
+        lookup_parameters = KIWOOM_LOOKUP_PARAMETER_MAP[method]
+        return [parameters[each.name] for each in lookup_parameters]
+    except (KeyError, TypeError) as error:
+        raise KiwoomLookupError(f"Lookup parameter '{method}', '{parameters}' is wrong") from error

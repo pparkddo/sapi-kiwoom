@@ -57,10 +57,10 @@ FAILED = "FAILED"
 
 class KiwoomTask:
     def __init__(self, message):
-        self.task_id = message["task_id"]
-        self.method = message["method"]
-        self.parameters = message["parameters"]
-        self.request_time = message["request_time"]
+        self.task_id = message.task_id
+        self.method = message.method
+        self.parameters = message.parameters
+        self.request_time = message.request_time
         self.response_time = None
         self.transaction_code = None
         self.status = PENDING
