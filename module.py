@@ -23,7 +23,12 @@ from kiwoom.transaction import (
     get_randomized_screen_number,
 )
 from kiwoom.task import validate_task_parameters, KiwoomTask, REQUESTED, FAILED
-from kiwoom.rt import validate_real_time_parameters, is_subscribe, is_unsubscribe
+from kiwoom.rt import (
+    validate_real_time_parameters,
+    is_subscribe,
+    is_unsubscribe,
+    generate_real_time_response,
+)
 
 
 # Kiwoom Connection Status
@@ -211,11 +216,11 @@ class KiwoomModule(QAxWidget):
         # pylint: disable=unused-argument
         listeners = self.listeners.get(stock_code)
         if not listeners:
-            print(f"::: No listeners! {stock_code} should be unsubscribed")
             return
 
+        real_time_response = generate_real_time_response(stock_code, real_data_type, real_time_data)
         for listener in listeners:
-            self.messenger.send_success_message(listener, real_time_data, False, False)
+            self.messenger.send_success_message(listener, real_time_response, False, False)
 
     def connect(self):
         self.dynamicCall("CommConnect()")

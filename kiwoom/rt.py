@@ -28,3 +28,11 @@ def is_subscribe(method):
 
 def is_unsubscribe(method):
     return method == UNSUBSCRIBE_REALTIME
+
+
+def generate_real_time_response(stock_code, real_data_type, real_time_data):
+    return {
+        "stock_code": stock_code,
+        "real_data_type": real_data_type,
+        "real_time_data": real_time_data,
+    }
