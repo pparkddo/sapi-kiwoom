@@ -92,9 +92,9 @@ class KiwoomModule(QAxWidget):
             self.handle_task_request(message)
         except MessageParsingError as error:
             task_response = get_fail_message("unknown", str(error))
-            delivery_tag = self.messenger.get_delivery_tag(method)
-            reply_queue = self.messenger.get_reply_queue(properties)
-            self.messenger.publish(task_response, reply_queue, channel)
+            delivery_tag = self.messenger.generate_delivery_tag(method)
+            reply_queue = self.messenger.generate_reply_queue(properties)
+            self.messenger.send(task_response, reply_queue, channel)
             self.messenger.acknowledge(channel, delivery_tag)
         except (KeyError, ValueError, KiwoomLookupError) as error:
             self.messenger.send_fail_message(message.task_id, str(error))
@@ -120,11 +120,11 @@ class KiwoomModule(QAxWidget):
                     self.subscribe_real_time_data(screen_number, stock_code, "10", "0")
                     self.add_listener(stock_code, task_id)
                     self.add_screen_number(stock_code, screen_number)
-                self.messenger.publish_success_message(
+                self.messenger.send_success_message(
                     task_id,
-                    f"{task_id} subscribes {stock_code} successfully"
+                    f"{task_id} subscribes {stock_code} successfully",
+                    pop_reply_queue=False
                 )
-                self.messenger.acknowledge_task(task_id)
             elif is_unsubscribe(method):
                 if not self.has_subscribed(stock_code, task_id):
                     self.messenger.send_fail_message(
@@ -215,7 +215,7 @@ class KiwoomModule(QAxWidget):
             return
 
         for listener in listeners:
-            self.messenger.publish_success_message(listener, real_time_data)
+            self.messenger.send_success_message(listener, real_time_data, False, False)
 
     def connect(self):
         self.dynamicCall("CommConnect()")
