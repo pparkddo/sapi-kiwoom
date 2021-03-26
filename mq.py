@@ -4,8 +4,6 @@ import json
 import pika
 
 
-BROKER_URL = "amqp://localhost:5672"
-
 TASK_SUCCEED = "TASK_SUCCEED"
 TASK_FAILED = "TASK_FAILED"
 
@@ -17,8 +15,8 @@ class MessageQueueConsumer(ABC):
         pass
 
 
-def consume(queue, callback):
-    connection = pika.BlockingConnection(pika.URLParameters(BROKER_URL))
+def consume(broker_url, queue, callback):
+    connection = pika.BlockingConnection(pika.URLParameters(broker_url))
     channel = connection.channel()
     channel.basic_qos(prefetch_count=1)
     generate_queue(channel, queue)
@@ -31,6 +29,7 @@ def generate_queue(channel, queue):
 
 
 def publish(
+        broker_url,
         body,
         queue,
         properties=None,
@@ -41,7 +40,7 @@ def publish(
     ):
 
     if not channel:
-        connection = pika.BlockingConnection(pika.URLParameters(BROKER_URL))
+        connection = pika.BlockingConnection(pika.URLParameters(broker_url))
         channel = connection.channel()
 
     if not is_queue_exist:
@@ -60,8 +59,8 @@ def publish(
         connection.close()
 
 
-def get_consume_thread(queue, callback):
-    return Thread(target=consume, args=(queue, callback))
+def get_consume_thread(broker_url, queue, callback):
+    return Thread(target=consume, args=(broker_url, queue, callback))
 
 
 def serialize(message):

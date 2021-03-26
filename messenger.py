@@ -51,14 +51,18 @@ def get_message(body):
 
 class Messenger:
 
-    def __init__(self):
+    def __init__(self, broker_url):
+        self.broker_url = broker_url
         self.delivery_tags = {}
         self.reply_queues = {}
         self.channel = None
         self.default_reply_queue = "sapi-kiwoom"
 
+    def get_broker_url(self):
+        return self.broker_url
+
     def send(self, task_response, reply_queue, channel):
-        publish(serialize(task_response), reply_queue, channel=channel)
+        publish(self.broker_url, serialize(task_response), reply_queue, channel=channel)
 
     def acknowledge(self, channel, delivery_tag):
         channel.basic_ack(delivery_tag=delivery_tag)
