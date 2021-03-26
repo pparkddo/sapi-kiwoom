@@ -18,7 +18,8 @@ def get_seconds_to_wait(waited):
 
 def log_wait(seconds_to_wait, minimum_log_second):
     if seconds_to_wait >= minimum_log_second:
-        print(f"{seconds_to_wait:.2f} seconds wait until request available")
+        now = f"{datetime.now():%Y-%m-%d %H:%M:%S}"
+        print(f"{now} Wait until request available: {seconds_to_wait:.2f} seconds")
 
 
 def wait_until_request_available(request_timestamps, minimum_log_second=1):

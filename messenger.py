@@ -1,7 +1,7 @@
 from datetime import datetime
 from dataclasses import dataclass
 
-from mq import publish, serialize, deserialize, TASK_SUCCEED, TASK_FAILED
+from mq import publish, serialize, deserialize, TASK_SUCCEED, TASK_FAILED, generate_queue
 from utils import get_task_response
 
 
@@ -94,6 +94,7 @@ class Messenger:
 
         if not self.channel:
             self.channel = channel
+            generate_queue(self.channel, self.default_reply_queue)
 
     def _get_reply_queue(self, task_id):
         return self.reply_queues.get(task_id)

@@ -21,9 +21,13 @@ def consume(queue, callback):
     connection = pika.BlockingConnection(pika.URLParameters(BROKER_URL))
     channel = connection.channel()
     channel.basic_qos(prefetch_count=1)
-    channel.queue_declare(queue=queue)
+    generate_queue(channel, queue)
     channel.basic_consume(queue=queue, on_message_callback=callback, auto_ack=False)
     channel.start_consuming()
+
+
+def generate_queue(channel, queue):
+    channel.queue_declare(queue=queue)
 
 
 def publish(
@@ -41,7 +45,7 @@ def publish(
         channel = connection.channel()
 
     if not is_queue_exist:
-        channel.queue_declare(queue=queue)
+        generate_queue(channel, queue)
 
     routing_key = routing_key if routing_key != "" else queue
 

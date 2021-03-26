@@ -9,6 +9,7 @@ from kiwoom.method import (
     get_method_type,
     REALTIME,
     LOOKUP,
+    TRANSACTION,
     GET_STOCK_NAME,
     GET_STOCK_CODES,
     GET_STOCK_STATES,
@@ -35,6 +36,10 @@ from kiwoom.rt import (
 CONNECTION_SUCCEED = 0
 
 
+class KiwoomModuleUninstallError(Exception):
+    pass
+
+
 class KiwoomModule(QAxWidget):
 
     def __init__(self, messenger):
@@ -51,10 +56,13 @@ class KiwoomModule(QAxWidget):
 
         self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
 
-        self.OnEventConnect.connect(self.on_connect)
-        self.OnReceiveMsg.connect(self.on_receive_message)
-        self.OnReceiveTrData.connect(self.on_receive_tr_data)
-        self.OnReceiveRealData.connect(self.on_receive_real_data)
+        try:
+            self.OnEventConnect.connect(self.on_connect)
+            self.OnReceiveMsg.connect(self.on_receive_message)
+            self.OnReceiveTrData.connect(self.on_receive_tr_data)
+            self.OnReceiveRealData.connect(self.on_receive_real_data)
+        except AttributeError as error:
+            raise KiwoomModuleUninstallError("키움 OpenAPI 가 설치되지 않았습니다") from error
 
     def add_listener(self, stock_code, task_id):
         existing_listeners = self.listeners.get(stock_code, [])
@@ -148,11 +156,10 @@ class KiwoomModule(QAxWidget):
             else:
                 self.send_fail_message(task_id, f"Method '{method}' is not avaliable")
                 return
-
         elif method_type == LOOKUP:
             lookup_result = self.get_lookup_result(method, parameters)
             self.messenger.send_success_message(task_id, lookup_result)
-        else:
+        elif method_type == TRANSACTION:
             validate_task_parameters(method, parameters)
             task = KiwoomTask(message)
 
