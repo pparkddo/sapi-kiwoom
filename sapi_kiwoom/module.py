@@ -2,10 +2,10 @@ from datetime import datetime
 
 from PyQt5.QAxContainer import QAxWidget
 
-from messenger import MessageParsingError, get_fail_message, Messenger
-from mq import get_consume_thread
-from delay import wait_until_request_available
-from kiwoom.method import (
+from .messenger import MessageParsingError, get_fail_message, Messenger
+from .mq import get_consume_thread
+from .delay import wait_until_request_available
+from .kiwoom.method import (
     get_method_type,
     REALTIME,
     LOOKUP,
@@ -14,8 +14,8 @@ from kiwoom.method import (
     GET_STOCK_CODES,
     GET_STOCK_STATES,
 )
-from kiwoom.lookup import get_lookup_parameters, KiwoomLookupError
-from kiwoom.transaction import (
+from .kiwoom.lookup import get_lookup_parameters, KiwoomLookupError
+from .kiwoom.transaction import (
     KiwoomTransactionRequest,
     get_transaction_response,
     is_last_transaction_data,
@@ -23,8 +23,8 @@ from kiwoom.transaction import (
     REQUEST_SUCCEED,
     get_randomized_screen_number,
 )
-from kiwoom.task import validate_task_parameters, KiwoomTask, REQUESTED, FAILED
-from kiwoom.rt import (
+from .kiwoom.task import validate_task_parameters, KiwoomTask, REQUESTED, FAILED
+from .kiwoom.rt import (
     validate_real_time_parameters,
     is_subscribe,
     is_unsubscribe,

@@ -1,10 +1,15 @@
 import sys
 import argparse
+import ctypes
 
 from PyQt5.Qt import QApplication
 
-from messenger import Messenger
-from module import KiwoomModule
+from .messenger import Messenger
+from .module import KiwoomModule
+
+
+class KiwoomPrivilegeError(Exception):
+    pass
 
 
 def parse_args():
@@ -17,7 +22,14 @@ def parse_args():
     return parsed_args, unparsed_args
 
 
+def check_run_as_admin():
+    return ctypes.windll.shell32.IsUserAnAdmin() == 1
+
+
 def main():
+    if not check_run_as_admin():
+        raise KiwoomPrivilegeError("키움 OpenAPI 모듈은 관리자권한에서만 정상실행 됩니다")
+
     parsed_args, unparsed_args = parse_args()
 
     # QApplication expects the first argument to be the program name
@@ -29,7 +41,3 @@ def main():
     kiwoom_module.connect()
 
     app.exec()
-
-
-if __name__ == "__main__":
-    main()

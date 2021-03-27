@@ -1,8 +1,12 @@
 from datetime import datetime
 from dataclasses import dataclass
 
-from mq import publish, serialize, deserialize, TASK_SUCCEED, TASK_FAILED, generate_queue
-from utils import get_task_response
+from .mq import publish, serialize, deserialize, generate_queue
+from .utils import get_task_response
+
+
+TASK_SUCCEED = "TASK_SUCCEED"
+TASK_FAILED = "TASK_FAILED"
 
 
 class MessageParsingError(Exception):

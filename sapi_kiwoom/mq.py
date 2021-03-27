@@ -1,18 +1,7 @@
-from abc import ABC, abstractmethod
-from threading import Thread
 import json
+from threading import Thread
+
 import pika
-
-
-TASK_SUCCEED = "TASK_SUCCEED"
-TASK_FAILED = "TASK_FAILED"
-
-
-class MessageQueueConsumer(ABC):
-
-    @abstractmethod
-    def callback(self, channel, method, properties, body):
-        pass
 
 
 def consume(broker_url, queue, callback):
