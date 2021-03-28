@@ -1,5 +1,5 @@
 # sapi-kiwoom
-키움증권 OpenAPI 서버 프로그램입니다. 서버과 클라이언트의 통신은 메시지큐를 통해서 이루어집니다. `sapi-kiwoom` 서버를 실행함으로써 클라이언트 프로그램의 실행환경 제약이 없어지고 클라이언트 프로그램에서 복잡한 GUI 이벤트 처리를 하지 않아도 됩니다. 
+키움증권 OpenAPI 서버 프로그램입니다. 서버과 클라이언트의 통신은 메시지큐를 통해서 이루어집니다. `sapi-kiwoom` 서버를 실행함으로써 클라이언트 프로그램을 서버와 분리된 환경에서 실행할 수 있습니다.
 
 ## Architecture
 ![sapi-kiwoom architecture](https://gist.githubusercontent.com/pparkddo/bf7cdd18b92a64988a71acdaf01ea004/raw/0b0d36195764108d4cd81044b63a5ff9bbd8c024/sapi_kiwoom_concept.svg)
@@ -11,10 +11,17 @@ pip install -r sapi-kiwoom/requirements.txt
 ```
 
 ## Example
-```
-cd sapi-kiwoom
-python -m sapi_kiwoom amqp://localhost:5672
-```
+- 서버실행 (서버 프로그램)
+  ```
+  cd sapi-kiwoom
+  python -m sapi_kiwoom amqp://localhost:5672
+  ```
+- RPC (클라이언트 프로그램)
+  ```python
+  ```
+- Subscribe (클라이언트 프로그램)
+  ```python
+  ```
 
 ## Requirements
 - `Python 3.8 (32bit)` : 키움 OpenAPI 는 32bit Python 에서만 실행 가능합니다.

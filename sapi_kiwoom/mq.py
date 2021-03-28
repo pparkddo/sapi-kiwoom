@@ -4,9 +4,17 @@ from threading import Thread
 import pika
 
 
+def get_connection(broker_url):
+    return pika.BlockingConnection(pika.URLParameters(broker_url))
+
+
+def get_channel(connection):
+    return connection.channel()
+
+
 def consume(broker_url, queue, callback):
-    connection = pika.BlockingConnection(pika.URLParameters(broker_url))
-    channel = connection.channel()
+    connection = get_connection(broker_url)
+    channel = get_channel(connection)
     channel.basic_qos(prefetch_count=1)
     generate_queue(channel, queue)
     channel.basic_consume(queue=queue, on_message_callback=callback, auto_ack=False)
@@ -29,8 +37,8 @@ def publish(
     ):
 
     if not channel:
-        connection = pika.BlockingConnection(pika.URLParameters(broker_url))
-        channel = connection.channel()
+        connection = get_connection(broker_url)
+        channel = get_channel(connection)
 
     if not is_queue_exist:
         generate_queue(channel, queue)
