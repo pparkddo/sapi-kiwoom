@@ -11,16 +11,72 @@ pip install -r sapi-kiwoom/requirements.txt
 ```
 
 ## Example
-- 서버실행 (서버 프로그램)
+- 서버 실행
   ```
   cd sapi-kiwoom
   python -m sapi_kiwoom amqp://localhost:5672
   ```
-- RPC (클라이언트 프로그램)
+- 클라이언트 실행
   ```python
+  import json
+  from datetime import datetime
+
+  import pika
+
+  # 요청할 내용을 json 으로 만듭니다.
+  request = {
+      "task_id": "custom-task-id",
+      "method": "get-stock-name",
+      "parameters": {"stock_code": "015760"},
+      "request_time": datetime.now(),
+  }
+  request_body = json.dumps(request, ensure_ascii=False, default=str)
+  
+  # 메시지큐에 연결하고 요청내용을 tasks 큐에 전송합니다.
+  # properties 를 추가하고 reply_queue 값에 큐 이름을 지정하면
+  # 자동으로 서버에서 기본 응답큐가 아닌 reply_queue 에 있는 값으로 응답을 보냅니다.
+  connection = pika.BlockingConnection(pika.URLParameters("amqp://localhost:5672"))
+  channel = connection.channel()
+  channel.basic_publish(
+    exchange="",
+    routing_key="tasks",  # default send queue : tasks
+    body=request_body
+  )
+
+  # 메시지를 받기위해 기본 응답 큐를 consume 합니다.
+  receive_messages = []
+  channel.basic_consume(
+      queue="sapi-kiwoom",  # default receive queue : sapi-kiwoom
+      on_message_callback=lambda *args: receive_messages.append(args[3]),
+      auto_ack=True
+  )
+
+  while not receive_messages:
+      connection.process_data_events()
+
+  # 응답으로 온 메시지를 json 으로 파싱해 확인합니다.
+  response_body = json.loads(receive_messages[0])
+  print(response_body)
   ```
-- Subscribe (클라이언트 프로그램)
-  ```python
+
+## Message Format
+- Request (JSON)
+  ```
+  {
+    "task_id": "custom-task-id",
+    "method": [sapi_kiwoom/kiwoom/method.py 참고],
+    "parameters": [lookup.py, rt.py, task.py 참고],
+    "request_time": "2021-03-28T12:53:41.820Z"
+  }
+  ```
+- Response (JSON)
+  ```
+  {
+    "task_id": "custom-task-id",
+    "result": [result(1), ..., result(n)],
+    "response_time": "2021-03-28T12:54:00.500Z",
+    "status": "TASK_SUCCEED" | "TASK_FAILED",
+  }
   ```
 
 ## Requirements
