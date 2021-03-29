@@ -1,7 +1,7 @@
 from datetime import datetime
 from dataclasses import dataclass
 
-from .mq import publish, serialize, deserialize, generate_queue
+from .mq import publish, serialize, deserialize, generate_queue, get_connection, get_channel
 from .utils import get_task_response
 
 
@@ -61,6 +61,7 @@ class Messenger:
         self.reply_queues = {}
         self.channel = None
         self.default_reply_queue = "sapi-kiwoom"
+        generate_queue(get_channel(get_connection(self.broker_url)), self.default_reply_queue)
 
     def get_broker_url(self):
         return self.broker_url
