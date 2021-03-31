@@ -2,7 +2,7 @@ from datetime import datetime
 
 from PyQt5.QAxContainer import QAxWidget
 
-from .messenger import MessageParsingError, get_fail_message, Messenger
+from .messenger import MessageParsingError, get_fail_message, Messenger, DEFAULT_REQUEST_QUEUE_NAME
 from .mq import get_consume_thread
 from .delay import wait_until_request_available
 from .kiwoom.method import (
@@ -50,7 +50,7 @@ class KiwoomModule(QAxWidget):
         self.listeners = {}  # {stock_code: [task_id,],}
 
         self.messenger = messenger
-        self.consumer = get_consume_thread(self.messenger.get_broker_url(), "tasks", self.callback)
+        self.consumer = get_consume_thread(self.messenger.get_broker_url(), DEFAULT_REQUEST_QUEUE_NAME, self.callback)
 
         self.request_timestamps = []
 

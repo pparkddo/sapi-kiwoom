@@ -7,6 +7,8 @@ from .utils import get_task_response
 
 TASK_SUCCEED = "TASK_SUCCEED"
 TASK_FAILED = "TASK_FAILED"
+DEFAULT_REQUEST_QUEUE_NAME = "tasks"
+DEFAULT_RESPONSE_QUEUE_NAME = "sapi-kiwoom"
 
 
 class MessageParsingError(Exception):
@@ -60,8 +62,12 @@ class Messenger:
         self.delivery_tags = {}
         self.reply_queues = {}
         self.channel = None
-        self.default_reply_queue = "sapi-kiwoom"
-        generate_queue(get_channel(get_connection(self.broker_url)), self.default_reply_queue)
+        self.setup_default_queue()
+
+    def setup_default_queue(self):
+        connection = get_connection(self.broker_url)
+        channel = get_channel(connection)
+        generate_queue(channel, DEFAULT_RESPONSE_QUEUE_NAME)
 
     def get_broker_url(self):
         return self.broker_url
@@ -76,7 +82,7 @@ class Messenger:
         return method.delivery_tag
 
     def generate_reply_queue(self, properties):
-        return properties.reply_to if properties.reply_to else self.default_reply_queue
+        return properties.reply_to if properties.reply_to else DEFAULT_RESPONSE_QUEUE_NAME
 
     def parse_message(self, channel, method, properties, body):
         message = get_message(body)
@@ -96,14 +102,13 @@ class Messenger:
 
     def _set_message_properties(self, task_id, channel, method, properties):
         delivery_tag = self.generate_delivery_tag(method)
-        self.delivery_tags.update({task_id: delivery_tag})
+        self.delivery_tags[task_id] = delivery_tag
 
         reply_queue = self.generate_reply_queue(properties)
-        self.reply_queues.update({task_id: reply_queue})
+        self.reply_queues[task_id] = reply_queue
 
         if not self.channel:
             self.channel = channel
-            generate_queue(self.channel, self.default_reply_queue)
 
     def _get_reply_queue(self, task_id):
         return self.reply_queues.get(task_id)
