@@ -1,5 +1,10 @@
 # sapi-kiwoom
-키움증권 OpenAPI 서버 프로그램입니다. 서버과 클라이언트의 통신은 메시지큐를 통해서 이루어집니다. `sapi-kiwoom` 서버를 실행함으로써 클라이언트 프로그램을 서버와 분리된 환경에서 실행할 수 있습니다.
+메시지큐를 이용하여 클라이언트와 통신하는 키움증권 OpenAPI 서버 프로그램입니다.
+
+## Feature
+- 클라이언트 프로그램을 OpenAPI 와 분리된 환경에서 실행할 수 있습니다.
+- cli 로 서버프로그램을 실행시킬 수 있습니다.
+- 트랜잭션 요청(RPC)와 실시간 시세 구독(Pub/Sub) 기능을 제공합니다.
 
 ## Architecture
 ![sapi-kiwoom architecture](https://gist.githubusercontent.com/pparkddo/bf7cdd18b92a64988a71acdaf01ea004/raw/0b0d36195764108d4cd81044b63a5ff9bbd8c024/sapi_kiwoom_concept.svg)
@@ -34,7 +39,7 @@ pip install -r sapi-kiwoom/requirements.txt
   
   # 메시지큐에 연결하고 요청내용을 tasks 큐에 전송합니다.
   # properties 를 추가하고 reply_queue 값에 큐 이름을 지정하면
-  # 자동으로 서버에서 기본 응답큐가 아닌 reply_queue 에 있는 값으로 응답을 보냅니다.
+  # 서버에서 기본 응답큐가 아닌 reply_queue 에 있는 값으로 응답을 보냅니다.
   connection = pika.BlockingConnection(pika.URLParameters("amqp://localhost:5672"))
   channel = connection.channel()
   channel.basic_publish(
@@ -64,8 +69,8 @@ pip install -r sapi-kiwoom/requirements.txt
   ```
   {
     "task_id": "custom-task-id",
-    "method": [sapi_kiwoom/kiwoom/method.py 참고],
-    "parameters": [lookup.py, rt.py, task.py 참고],
+    "method": "sapi_kiwoom/kiwoom/method.py 참고",
+    "parameters": {parameter_name: value},
     "request_time": "2021-03-28T12:53:41.820Z"
   }
   ```
